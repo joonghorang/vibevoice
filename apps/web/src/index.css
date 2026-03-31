@@ -1,0 +1,341 @@
+:root {
+  color-scheme: light;
+  --bg: #f5efe0;
+  --surface: rgba(255, 251, 243, 0.84);
+  --surface-strong: rgba(255, 249, 238, 0.96);
+  --surface-muted: rgba(116, 96, 76, 0.1);
+  --border: rgba(93, 69, 45, 0.15);
+  --text: #241a11;
+  --text-muted: #6e5a48;
+  --accent: #0f7b6c;
+  --accent-soft: rgba(15, 123, 108, 0.14);
+  --active: #ff7a45;
+  --shadow: 0 18px 50px rgba(67, 45, 19, 0.14);
+  font-family: "Avenir Next", "Pretendard", "Noto Sans KR", "Segoe UI",
+    sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(255, 156, 93, 0.35), transparent 30%),
+    radial-gradient(circle at right, rgba(57, 137, 196, 0.18), transparent 28%),
+    linear-gradient(180deg, #f7f0df 0%, #f1e5d3 100%);
+  color: var(--text);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.25) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.5), transparent 90%);
+  pointer-events: none;
+}
+
+.app-frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px;
+}
+
+.topbar,
+.status-banner,
+.pane,
+.error-banner {
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.topbar {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+  padding: 24px;
+  border-radius: 28px;
+  background: var(--surface);
+}
+
+.brand-block h1,
+.pane-header h2 {
+  margin: 0;
+  letter-spacing: -0.04em;
+}
+
+.brand-block h1 {
+  font-size: clamp(2rem, 3vw, 3.2rem);
+}
+
+.eyebrow,
+.pane-eyebrow {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.subcopy {
+  margin: 12px 0 0;
+  max-width: 58ch;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.hotword-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-muted);
+}
+
+.hotword-field input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+}
+
+.status-pill-row,
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.status-pill,
+.badge {
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.status-pill {
+  background: var(--surface-muted);
+}
+
+.status-idle,
+.status-stopped {
+  background: rgba(109, 94, 77, 0.14);
+}
+
+.status-listening {
+  background: rgba(15, 123, 108, 0.16);
+  color: #0c6659;
+}
+
+.status-processing {
+  background: rgba(255, 122, 69, 0.18);
+  color: #ad4b1c;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.primary-button,
+.secondary-button,
+.ghost-button {
+  border: 0;
+  border-radius: 16px;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+
+.primary-button {
+  background: var(--accent);
+  color: white;
+}
+
+.secondary-button {
+  background: rgba(36, 26, 17, 0.1);
+  color: var(--text);
+}
+
+.ghost-button {
+  background: white;
+  color: var(--text);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: 22px;
+  background: var(--surface-strong);
+}
+
+.status-banner > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.status-banner strong {
+  font-size: 1.1rem;
+}
+
+.status-banner span {
+  color: var(--text-muted);
+}
+
+.error-banner {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 96, 85, 0.15);
+  color: #8f2416;
+}
+
+.split-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  min-height: 65vh;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  border-radius: 28px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pane-count {
+  color: var(--text-muted);
+}
+
+.pane-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+  padding: 18px;
+}
+
+.utterance-row {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(93, 69, 45, 0.08);
+  background: rgba(255, 255, 255, 0.55);
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease;
+}
+
+.utterance-row.active {
+  background: linear-gradient(135deg, rgba(255, 122, 69, 0.18), rgba(255, 214, 177, 0.6));
+  border-color: rgba(255, 122, 69, 0.3);
+  transform: scale(1.01);
+}
+
+.utterance-row p {
+  margin: 0;
+  font-size: clamp(1rem, 1.2vw, 1.22rem);
+  line-height: 1.6;
+}
+
+.utterance-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.badge {
+  background: rgba(36, 26, 17, 0.07);
+}
+
+.badge-final {
+  background: rgba(15, 123, 108, 0.16);
+  color: #0c6659;
+}
+
+.badge-partial {
+  background: rgba(255, 122, 69, 0.18);
+  color: #ad4b1c;
+}
+
+.badge-lang {
+  background: rgba(57, 137, 196, 0.16);
+  color: #215d88;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.empty-state p {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  color: var(--text);
+}
+
+@media (max-width: 960px) {
+  .app-frame {
+    padding: 16px;
+  }
+
+  .topbar,
+  .split-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .status-banner {
+    flex-wrap: wrap;
+  }
+}
