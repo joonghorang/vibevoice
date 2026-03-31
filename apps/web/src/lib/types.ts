@@ -29,3 +29,8 @@ export interface LiveEvent {
   type: string;
   payload: SessionSnapshot;
 }
+
+export interface SampleFileInfo {
+  name: string;
+  size_bytes: number;
+}

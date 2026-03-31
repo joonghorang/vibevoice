@@ -36,6 +36,16 @@ class SessionRequest(BaseModel):
     hotwords: list[str] = Field(default_factory=list)
 
 
+class SampleFileInfo(BaseModel):
+    name: str
+    size_bytes: int
+
+
+class SampleProcessRequest(BaseModel):
+    sample_name: str
+    hotwords: list[str] = Field(default_factory=list)
+
+
 class AudioConfigRequest(BaseModel):
     sampleRate: int
 

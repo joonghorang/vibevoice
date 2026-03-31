@@ -10,7 +10,8 @@
     "dev:web": "npm --workspace apps/web run dev",
     "build:web": "npm --workspace apps/web run build",
     "preview:web": "npm --workspace apps/web run preview",
-    "dev:server": "python3 -m uvicorn app.main:app --reload --app-dir services/asr-server --host 127.0.0.1 --port 8000"
+    "dev:server": "python3 -m uvicorn app.main:app --reload --app-dir services/asr-server --host 127.0.0.1 --port 8000",
+    "download:models": "python3 scripts/download_vibevoice_models.py"
   },
   "devDependencies": {
     "concurrently": "^9.2.0"

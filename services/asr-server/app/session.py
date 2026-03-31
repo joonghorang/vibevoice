@@ -4,7 +4,6 @@ import asyncio
 import json
 import uuid
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
 from fastapi import WebSocket
@@ -55,20 +54,7 @@ class LiveSessionService:
 
         self._buffer = np.array([], dtype=np.float32)
         self._last_processed_sample_count = 0
-        now = datetime.utcnow()
-        self._snapshot = SessionSnapshot(
-            session_id=now.strftime("%Y%m%d-%H%M%S"),
-            status="listening",
-            started_at=now,
-            updated_at=now,
-            audio_level=0.0,
-            active_utterance_id=None,
-            transcription_provider=self._transcriber.provider_name,
-            translation_provider=self._translator.provider_name,
-            hotwords=hotwords,
-            utterances=[],
-            last_error=None,
-        )
+        self._snapshot = self._build_snapshot(status="listening", hotwords=hotwords)
         self._process_task = asyncio.create_task(self._process_loop())
         await self._broadcast_snapshot()
         return self._snapshot
@@ -82,6 +68,51 @@ class LiveSessionService:
         self._snapshot.updated_at = datetime.utcnow()
         await self._persist_session()
         await self._broadcast_snapshot()
+        return self._snapshot
+
+    async def process_audio_file(
+        self,
+        *,
+        audio: np.ndarray,
+        sample_rate: int,
+        hotwords: list[str],
+        source_name: str,
+    ) -> SessionSnapshot:
+        if self._process_task:
+            self._process_task.cancel()
+            self._process_task = None
+
+        self._buffer = np.array([], dtype=np.float32)
+        self._last_processed_sample_count = 0
+        self._snapshot = self._build_snapshot(status="processing", hotwords=hotwords)
+        self._snapshot.last_error = None
+        await self._broadcast_snapshot()
+
+        try:
+            target_rate = self._settings.target_sample_rate
+            if sample_rate != target_rate:
+                audio = _resample_audio(audio, sample_rate, target_rate)
+
+            self._snapshot.audio_level = (
+                float(np.sqrt(np.mean(audio**2))) if len(audio) else 0.0
+            )
+            prompt = ", ".join(self._snapshot.hotwords) if self._snapshot.hotwords else None
+            drafts = await self._transcriber.transcribe(
+                audio.astype(np.float32, copy=False),
+                target_rate,
+                prompt,
+            )
+            await self._merge_drafts(drafts, offset_ms=0)
+            self._mark_all_utterances_final()
+            self._snapshot.last_error = await self._translate_utterances()
+        except Exception as error:  # noqa: BLE001
+            self._snapshot.last_error = f"{source_name}: {error}"
+        finally:
+            self._snapshot.status = "stopped"
+            self._snapshot.updated_at = datetime.utcnow()
+            await self._persist_session()
+            await self._broadcast_snapshot()
+
         return self._snapshot
 
     async def configure_audio(self, sample_rate: int) -> None:
@@ -155,14 +186,31 @@ class LiveSessionService:
                 prompt,
             )
             await self._merge_drafts(drafts, offset_ms)
-            await self._translate_utterances()
-            self._snapshot.last_error = None
+            self._snapshot.last_error = await self._translate_utterances()
         except Exception as error:  # noqa: BLE001
             self._snapshot.last_error = str(error)
         finally:
             self._snapshot.status = "listening"
             self._snapshot.updated_at = datetime.utcnow()
             await self._broadcast_snapshot()
+
+    def _build_snapshot(
+        self, *, status: str, hotwords: list[str]
+    ) -> SessionSnapshot:
+        now = datetime.utcnow()
+        return SessionSnapshot(
+            session_id=now.strftime("%Y%m%d-%H%M%S"),
+            status=status,
+            started_at=now,
+            updated_at=now,
+            audio_level=0.0,
+            active_utterance_id=None,
+            transcription_provider=self._transcriber.provider_name,
+            translation_provider=self._translator.provider_name,
+            hotwords=hotwords,
+            utterances=[],
+            last_error=None,
+        )
 
     async def _merge_drafts(
         self, drafts: list[DraftUtterance], offset_ms: int
@@ -207,7 +255,12 @@ class LiveSessionService:
             self._snapshot.utterances[-1].id if self._snapshot.utterances else None
         )
 
-    async def _translate_utterances(self) -> None:
+    def _mark_all_utterances_final(self) -> None:
+        for utterance in self._snapshot.utterances:
+            utterance.status = "final"
+
+    async def _translate_utterances(self) -> str | None:
+        translation_error: str | None = None
         for utterance in self._snapshot.utterances:
             if (
                 utterance.translated_text
@@ -215,11 +268,18 @@ class LiveSessionService:
             ):
                 continue
 
-            translated = await self._translator.translate(
-                utterance.source_text, utterance.source_lang
-            )
+            try:
+                translated = await self._translator.translate(
+                    utterance.source_text, utterance.source_lang
+                )
+            except Exception as error:  # noqa: BLE001
+                translated = utterance.source_text
+                if translation_error is None:
+                    translation_error = str(error)
             utterance.translated_text = translated
             utterance.translated_from_text = utterance.source_text
+
+        return translation_error
 
     def _find_matching_utterance(
         self, start_ms: int, end_ms: int, speaker: str

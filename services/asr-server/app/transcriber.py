@@ -76,11 +76,26 @@ class VibeVoiceTranscriptionService(TranscriptionService):
 
         from transformers import AutoProcessor, VibeVoiceAsrForConditionalGeneration
 
-        self._processor = AutoProcessor.from_pretrained(self._settings.vibevoice_model_id)
-        self._model = VibeVoiceAsrForConditionalGeneration.from_pretrained(
-            self._settings.vibevoice_model_id,
-            device_map="auto",
-        )
+        load_kwargs = {
+            "cache_dir": str(self._settings.vibevoice_cache_dir),
+            "local_files_only": self._settings.vibevoice_local_files_only,
+        }
+
+        try:
+            self._processor = AutoProcessor.from_pretrained(
+                self._settings.vibevoice_model_id,
+                **load_kwargs,
+            )
+            self._model = VibeVoiceAsrForConditionalGeneration.from_pretrained(
+                self._settings.vibevoice_model_id,
+                device_map="auto",
+                **load_kwargs,
+            )
+        except OSError as error:
+            raise RuntimeError(
+                "VibeVoice local model files are missing. Run "
+                "`npm run download:models` to pre-download them into .models."
+            ) from error
 
     def _transcribe_blocking(
         self, audio: np.ndarray, sample_rate: int, prompt: str | None
